@@ -7,10 +7,10 @@
 #define slr(t, l, r) ((t << l) ^ (t >> r))
 
 #define BIGENDIAN(bytes, start) \
-    (bytes[i] << 24) |          \
-        (bytes[i + 1] << 16) |  \
-        (bytes[i + 2] << 8) |   \
-        (bytes[i + 3])
+  (bytes[i] << 24) |            \
+      (bytes[i + 1] << 16) |    \
+      (bytes[i + 2] << 8) |     \
+      (bytes[i + 3])
 
 static const int32_t const
     sha256_constants[] = {
@@ -96,79 +96,80 @@ uint8_t *sha256(const uint8_t *key)
 {
 #define SHA256_SIZE 64
 
-    uint8_t bytes[SHA256_SIZE];
-    memset(bytes, 0, sizeof(uint8_t) * SHA256_SIZE);
-    bytes[10] = 0x80;
-    bytes[63] = 80;
+  uint8_t bytes[SHA256_SIZE];
+  memset(bytes, 0, sizeof(uint8_t) * SHA256_SIZE);
+  bytes[10] = 0x80;
+  bytes[63] = 80;
 
-    for (int i = 0; i < 10; i++)
-    {
-        bytes[i] = key[i];
-    }
+  for (int i = 0; i < 10; i++)
+  {
+    bytes[i] = key[i];
+  }
 
-    uint32_t tmp[SHA256_SIZE];
+  uint32_t tmp[SHA256_SIZE];
 
-    for (int i = 0; i < 16; i++)
-    {
-        tmp[i] = BIGENDIAN(bytes, i * 4);
-    }
+  for (int i = 0; i < 16; i++)
+  {
+    tmp[i] = BIGENDIAN(bytes, i * 4);
+  }
 
-    for (int i = 16; i < SHA256_SIZE; i++)
-    {
-        int32_t t0 = tmp[i - 15];
-        int32_t td = tmp[i - 2];
+  for (int i = 16; i < SHA256_SIZE; i++)
+  {
+    int32_t t0 = tmp[i - 15];
+    int32_t td = tmp[i - 2];
 
-        int32_t t0_1 = slr(t0, 0x0e, 0x12);
-        int32_t t0_2 = slr(t0, 0x19, 0x07);
-        int32_t t0_3 = t0 >> 0x03;
+    int32_t t0_1 = slr(t0, 0x0e, 0x12);
+    int32_t t0_2 = slr(t0, 0x19, 0x07);
+    int32_t t0_3 = t0 >> 0x03;
 
-        int32_t td_1 = slr(td, 0x0f, 0x11);
-        int32_t td_2 = slr(td, 0x0d, 0x13);
-        int32_t td_3 = td >> 0x0a;
+    int32_t td_1 = slr(td, 0x0f, 0x11);
+    int32_t td_2 = slr(td, 0x0d, 0x13);
+    int32_t td_3 = td >> 0x0a;
 
-        tmp[i] = (tmp[i - 0x07] + (t0_1 ^ t0_2 ^ t0_3) + tmp[i - 0x10] + (td_1 ^ td_2 ^ td_3));
-    }
+    tmp[i] = (tmp[i - 0x07] + (t0_1 ^ t0_2 ^ t0_3) + tmp[i - 0x10] + (td_1 ^ td_2 ^ td_3));
+  }
 
-    int32_t sbuf[8];
+  int32_t sbuf[8];
 
-    memcpy(sbuf, sha256_iv, sizeof(uint8_t) * 8);
+  memcpy(sbuf, sha256_iv, sizeof(uint8_t) * 8);
 
-    for (int i = 0; i < SHA256_SIZE; i++)
-    {
-        int32_t s6 = sha256_iv[6];
-        int32_t s5 = sha256_iv[5];
-        int32_t s4 = sha256_iv[4];
-        int32_t value = sha256_constants[i] + tmp[i] + sbuf[7] + ((~s4 & s6) ^ (s5 & s4)) + (slr(s4, 0x15, 0x0b) ^ slr(s4, 0x07, 0x19) ^ slr(s4, 0x1a, 0x06));
-        sbuf[7] = s6;
-        sbuf[6] = s5;
-        sbuf[5] = s4;
-        sbuf[4] = sbuf[3] + value;
+  for (int i = 0; i < SHA256_SIZE; i++)
+  {
+    int32_t s6 = sha256_iv[6];
+    int32_t s5 = sha256_iv[5];
+    int32_t s4 = sha256_iv[4];
+    int32_t value = sha256_constants[i] + tmp[i] + sbuf[7] + ((~s4 & s6) ^ (s5 & s4)) + (slr(s4, 0x15, 0x0b) ^ slr(s4, 0x07, 0x19) ^ slr(s4, 0x1a, 0x06));
+    sbuf[7] = s6;
+    sbuf[6] = s5;
+    sbuf[5] = s4;
+    sbuf[4] = sbuf[3] + value;
 
-        int32_t s0 = sbuf[0];
-        int32_t s1 = sbuf[1];
-        int32_t s2 = sbuf[2];
+    int32_t s0 = sbuf[0];
+    int32_t s1 = sbuf[1];
+    int32_t s2 = sbuf[2];
 
-        sbuf[3] = s2;
-        sbuf[2] = s1;
-        sbuf[1] = s0;
-        sbuf[0] = (slr(s0, 0x13, 0x0d) ^ slr(s0, 0x0a, 0x16) ^ slr(s0, 0x1e, 0x02)) +
-                  (((s1 ^ s0) & s2) ^ (s1 & s0)) + tmp;
-    }
+    sbuf[3] = s2;
+    sbuf[2] = s1;
+    sbuf[1] = s0;
+    sbuf[0] = (slr(s0, 0x13, 0x0d) ^ slr(s0, 0x0a, 0x16) ^ slr(s0, 0x1e, 0x02)) +
+              (((s1 ^ s0) & s2) ^ (s1 & s0)) + value;
+  }
 
-    uint8_t *result = calloc(sizeof(uint8_t), 32);
+  uint8_t *result = calloc(sizeof(uint8_t), 32);
 
-    for (int i = 0; i < 8; i++)
-    {
-        int32_t value = sbuf[i] + sha256_iv[i];
-        result[i] = GET_BYTE(value, 3);
-        result[i + 1] = GET_BYTE(value, 2);
-        result[i + 2] = GET_BYTE(value, 1);
-        result[i + 3] = GET_BYTE(value, 0);
-    }
+  for (int i = 0; i < 8; i++)
+  {
+    int32_t value = sbuf[i] + sha256_iv[i];
+    result[i] = GET_BYTE(value, 3);
+    result[i + 1] = GET_BYTE(value, 2);
+    result[i + 2] = GET_BYTE(value, 1);
+    result[i + 3] = GET_BYTE(value, 0);
+  }
 
-    return result;
+  return result;
 }
 
-int main(int32_t argc, char *argv[])
+int main(int32_t argc, char* argv[])
 {
+    
 }
